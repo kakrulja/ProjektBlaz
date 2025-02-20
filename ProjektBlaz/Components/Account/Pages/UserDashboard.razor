@@ -1,5 +1,6 @@
 ﻿@page "/UserDashboard"
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @using ProjektBlaz.Data
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -8,29 +9,45 @@
 
 <PageTitle>Your Dashboard</PageTitle>
 
-@if (user != null)
-{
-    <h1>Welcome back, @user.UserName!</h1>
-
-    <h3>Your Recent Activities:</h3>
-    <ul>
-        <li>Activity 1</li>
-        <li>Activity 2</li>
-        <li>Activity 3</li>
-    </ul>
-}
-else if (isLoading)
+@if (isLoading)
 {
     <p>Loading...</p>
 }
-else
+else if (user == null)
 {
     <p>User not found. Redirecting...</p>
+}
+else
+{
+    
+
+    @if (user.Email == "administrator@gmail.com")
+    {
+        <h1>Welcome, Administrator!</h1>
+        <h3>All Users:</h3>
+        <ul>
+            @foreach (var dbUser in allUsers)
+            {
+                <li>@dbUser.UserName (@dbUser.Email) - @(dbUser.EmailConfirmed ? "Confirmed" : "Not Confirmed")</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <h1>Welcome, @user.UserName!</h1>
+        <h3>Your Recent Activities:</h3>
+        <ul>
+            <li>Activity 1</li>
+            <li>Activity 2</li>
+            <li>Activity 3</li>
+        </ul>
+    }
 }
 
 @code {
     private ApplicationUser? user;
     private bool isLoading = true;
+    private List<ApplicationUser> allUsers = new List<ApplicationUser>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -40,10 +57,25 @@ else
         if (currentUser != null)
         {
             user = currentUser;
+
+            // Hardcode the check for admin email (administrator@gmail.com)
+            if (user.Email == "administrator@gmail.com")
+            {
+                // Fetch all users from the database
+                allUsers = await UserManager.Users.ToListAsync();
+            }
+
+            // If the user is not confirmed, redirect
+            if (!user.EmailConfirmed)
+            {
+                await Task.Delay(500);
+                NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
+                return;
+            }
         }
         else
         {
-            await Task.Delay(500); // Allow authentication state to catch up
+            await Task.Delay(500);
             NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
         }
 
@@ -54,6 +86,6 @@ else
     private async Task LogoutUser()
     {
         await SignInManager.SignOutAsync();
-        NavigationManager.NavigateTo("/", forceLoad: true);
+        NavigationManager.NavigateTo("/Account/Login");
     }
 }

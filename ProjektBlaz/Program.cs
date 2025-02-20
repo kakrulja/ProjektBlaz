@@ -18,6 +18,15 @@ builder.Services.AddScoped<IdentityUserAccessor>(); // Custom Identity user acce
 builder.Services.AddScoped<IdentityRedirectManager>(); // Handles redirects after login/signup
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10); // Lock for 10 minutes
+    options.Lockout.MaxFailedAccessAttempts = 3; // Lock account after 3 failed attempts
+    options.Lockout.AllowedForNewUsers = true; 
+});
+
+
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -67,6 +76,38 @@ app.MapRazorComponents<App>()  // Map Razor Components for Blazor app
 
 // Add additional Identity endpoints for account management (login, register, etc.)
 app.MapAdditionalIdentityEndpoints();
+
+
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseMigrationsEndPoint();
+}
+else
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseAntiforgery();
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
+    {
+        context.Response.Redirect("/Account/Login");
+        return;
+    }
+    await next();
+});
+
 
 // Run the application
 app.Run();

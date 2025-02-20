@@ -16,15 +16,19 @@ namespace ProjektBlaz.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             // Additional model configurations (if needed) can go here
+
+            // If you have specific configurations for the Ticket entity, you can define them here
+            modelBuilder.Entity<Ticket>(entity =>
+            {
+                entity.HasKey(t => t.Id); // Example: Define primary key
+            });
         }
 
-        public DbSet<Ticket> Tickets { get; set; } // Add this line
+        // Define your DbSet below OnModelCreating
+        public DbSet<Ticket> Tickets { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
 
     }
 }
